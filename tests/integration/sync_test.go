@@ -110,6 +110,25 @@ var (
 		},
 	}
 
+	// konnect
+	route1_konnect = []*kong.Route{
+		{
+			Name:                    kong.String("r1"),
+			Paths:                   []*string{kong.String("/r1")},
+			PathHandling:            nil,
+			PreserveHost:            kong.Bool(false),
+			Protocols:               []*string{kong.String("http"), kong.String("https")},
+			RegexPriority:           kong.Int(0),
+			StripPath:               kong.Bool(false),
+			HTTPSRedirectStatusCode: kong.Int(301),
+			RequestBuffering:        nil,
+			ResponseBuffering:       nil,
+			Service: &kong.Service{
+				ID: kong.String("8076db2-28b6-423b-ba39-a797193017f7"),
+			},
+		},
+	}
+
 	// has run-on set to 'first'
 	plugin_143_151 = []*kong.Plugin{
 		{
@@ -483,6 +502,48 @@ func Test_Sync_ServicesRoutes_From_2_6_9(t *testing.T) {
 }
 
 // test scope:
+//   - konnect
+func Test_Sync_ServicesRoutes_Konnect(t *testing.T) {
+	// setup stage
+	client, err := getTestClient()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	tests := []struct {
+		name          string
+		kongFile      string
+		expectedState utils.KongRawState
+	}{
+		{
+			name:     "creates a service",
+			kongFile: "testdata/sync/001-create-a-service/kong.yaml",
+			expectedState: utils.KongRawState{
+				Services: svc1_207,
+			},
+		},
+		{
+			name:     "create services and routes",
+			kongFile: "testdata/sync/002-create-services-and-routes/kong.yaml",
+			expectedState: utils.KongRawState{
+				Services: svc1_207,
+				Routes:   route1_konnect,
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			runWhen(t, "konnect", "")
+			teardown := setup(t)
+			defer teardown(t)
+
+			sync(tc.kongFile)
+			testKongState(t, client, tc.expectedState, nil)
+		})
+	}
+}
+
+// test scope:
 //   - 1.4.3
 func Test_Sync_BasicAuth_Plugin_1_4_3(t *testing.T) {
 	// setup stage
@@ -637,6 +698,41 @@ func Test_Sync_BasicAuth_Plugin_From_2_0_5(t *testing.T) {
 }
 
 // test scope:
+//   - konnect
+func Test_Sync_BasicAuth_Plugin_Konnect(t *testing.T) {
+	// setup stage
+	client, err := getTestClient()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	tests := []struct {
+		name            string
+		kongFile        string
+		initialKongFile string
+		expectedState   utils.KongRawState
+	}{
+		{
+			name:     "create a plugin",
+			kongFile: "testdata/sync/003-create-a-plugin/kong.yaml",
+			expectedState: utils.KongRawState{
+				Plugins: plugin,
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			runWhen(t, "konnect", "")
+			teardown := setup(t)
+			defer teardown(t)
+
+			sync(tc.kongFile)
+			testKongState(t, client, tc.expectedState, nil)
+		})
+	}
+}
+
+// test scope:
 //   - 1.4.3
 //   - 1.5.1
 //   - 1.5.0.11+enterprise
@@ -730,6 +826,42 @@ func Test_Sync_Upstream_Target_From_2x(t *testing.T) {
 }
 
 // test scope:
+//   - konnect
+func Test_Sync_Upstream_Target_Konnect(t *testing.T) {
+	// setup stage
+	client, err := getTestClient()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	tests := []struct {
+		name          string
+		kongFile      string
+		expectedState utils.KongRawState
+	}{
+		{
+			name:     "creates an upstream and target",
+			kongFile: "testdata/sync/004-create-upstream-and-target/kong.yaml",
+			expectedState: utils.KongRawState{
+				Upstreams: upstream,
+				Targets:   target,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			runWhen(t, "konnect", "")
+			teardown := setup(t)
+			defer teardown(t)
+
+			sync(tc.kongFile)
+			testKongState(t, client, tc.expectedState, nil)
+		})
+	}
+}
+
+// test scope:
 //   - 2.4.1
 //   - 2.5.1
 //   - 2.6.0
@@ -763,6 +895,42 @@ func Test_Sync_Upstreams_Target_ZeroWeight(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			runWhen(t, "kong", ">=2.4.1")
+			teardown := setup(t)
+			defer teardown(t)
+
+			sync(tc.kongFile)
+			testKongState(t, client, tc.expectedState, nil)
+		})
+	}
+}
+
+// test scope:
+//   - konnect
+func Test_Sync_Upstreams_Target_ZeroWeight_Konnect(t *testing.T) {
+	// setup stage
+	client, err := getTestClient()
+	if err != nil {
+		t.Errorf(err.Error())
+	}
+
+	tests := []struct {
+		name          string
+		kongFile      string
+		expectedState utils.KongRawState
+	}{
+		{
+			name:     "creates an upstream and target with weight equals to zero",
+			kongFile: "testdata/sync/005-create-upstream-and-target-weight/kong.yaml",
+			expectedState: utils.KongRawState{
+				Upstreams: upstream,
+				Targets:   targetZeroWeight,
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			runWhen(t, "konnect", ">=2.4.1")
 			teardown := setup(t)
 			defer teardown(t)
 
