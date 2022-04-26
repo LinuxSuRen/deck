@@ -22,6 +22,7 @@ func Test_Diff_Workspace(t *testing.T) {
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			runWhen(t, "kong", ">=1.4.3")
 			teardown := setup(t)
 			defer teardown(t)
 
